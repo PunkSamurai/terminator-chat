@@ -10,19 +10,31 @@
 
 
 PLANNED FUNCTIONALITES:
+
 server:
+
 name server, give optional password protection
+
 can run server on a network, should be visible to all clients
+
 run stateless database with all messages (hopefully encrypted) and constantly update client based on relevant entries
+
 spawn new thread for every connected client
 
 client:
+
 set nickname
+
 join available server
+
 send message to database
+
 view messages (DM and serverwide)
 
 client ui needs 3 windows:
+
 servers/open DMS on side
+
 one window for writing message
+
 one window fo viewing current chat
