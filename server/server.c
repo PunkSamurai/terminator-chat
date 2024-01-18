@@ -1,93 +1,113 @@
 #include <stdio.h>
 #include <stdlib.h>
 #include <string.h>
-#include <unistd.h>
+#include <sys/socket.h>
 #include <arpa/inet.h>
+#include <unistd.h>
 #include <pthread.h>
 
-#define PORT 8080
-#define MAX_CLIENTS 5
+#define MAX_CLIENTS 10
+#define MESSAGE_SIZE 200
 
-void *handleClient(void *socketDesc) {
-    int clientSocket = *(int *)socketDesc;
-    char buffer[1024];
-    struct sockaddr_in clientAddr;
-    socklen_t addrSize = sizeof(clientAddr);
+int client_sockets[MAX_CLIENTS];
+pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
-    getpeername(clientSocket, (struct sockaddr *)&clientAddr, &addrSize);
-    printf("Connection accepted from %s:%d\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
+void broadcast(char *message, int sender_socket) {
+    pthread_mutex_lock(&mutex);
 
-    while (1) {
-        memset(buffer, 0, sizeof(buffer));
-        if (recv(clientSocket, buffer, sizeof(buffer), 0) <= 0) {
-            printf("Client %s:%d disconnected\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
-            close(clientSocket);
-            pthread_exit(NULL);
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (client_sockets[i] != 0 && client_sockets[i] != sender_socket) {
+            send(client_sockets[i], message, strlen(message), 0);
         }
-
-        if (strcmp(buffer, "exit") == 0) {
-            printf("Client %s:%d disconnected\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port));
-            close(clientSocket);
-            pthread_exit(NULL);
-        }
-
-        printf("Client %s:%d says: %s\n", inet_ntoa(clientAddr.sin_addr), ntohs(clientAddr.sin_port), buffer);
     }
+
+    pthread_mutex_unlock(&mutex);
+}
+
+void *client_handler(void *socket_ptr) {
+    int client_socket = *(int *)socket_ptr;
+    char message[MESSAGE_SIZE];
+
+    printf("Client connected on socket %d\n", client_socket);
+
+    while (recv(client_socket, message, MESSAGE_SIZE, 0) > 0) {
+        printf("Received message from socket %d: %s", client_socket, message);
+        broadcast(message, client_socket);
+    }
+
+    // Client disconnected
+    printf("Client on socket %d disconnected\n", client_socket);
+
+    pthread_mutex_lock(&mutex);
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        if (client_sockets[i] == client_socket) {
+            client_sockets[i] = 0;
+            break;
+        }
+    }
+    pthread_mutex_unlock(&mutex);
+
+    close(client_socket);
+    pthread_exit(NULL);
 }
 
 int main() {
-    int serverSocket, clientSocket;
-    struct sockaddr_in serverAddr, clientAddr;
-    socklen_t addrSize = sizeof(clientAddr);
-    pthread_t thread;
+    int server_socket, client_socket, c;
+    struct sockaddr_in server, client;
 
     // Create socket
-    serverSocket = socket(AF_INET, SOCK_STREAM, 0);
-    if (serverSocket == -1) {
-        perror("Error creating socket");
+    server_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (server_socket == -1) {
+        perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
 
-    // Set up server address structure
-    serverAddr.sin_family = AF_INET;
-    serverAddr.sin_addr.s_addr = INADDR_ANY;
-    serverAddr.sin_port = htons(PORT);
+    // Prepare the sockaddr_in structure
+    server.sin_family = AF_INET;
+    server.sin_addr.s_addr = INADDR_ANY;
+    server.sin_port = htons(8888);
 
-    // Bind the socket
-    if (bind(serverSocket, (struct sockaddr *)&serverAddr, sizeof(serverAddr)) == -1) {
-        perror("Error binding");
+    // Bind
+    if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
+        perror("Bind failed");
         exit(EXIT_FAILURE);
     }
 
-    // Listen for incoming connections
-    if (listen(serverSocket, MAX_CLIENTS) == -1) {
-        perror("Error listening");
-        exit(EXIT_FAILURE);
+    // Listen
+    listen(server_socket, 3);
+
+    printf("Server listening on port 8888...\n");
+
+    c = sizeof(struct sockaddr_in);
+
+    pthread_t thread;
+    int new_socket;
+
+    // Initialize client sockets
+    for (int i = 0; i < MAX_CLIENTS; i++) {
+        client_sockets[i] = 0;
     }
 
-    printf("Server listening on port %d...\n", PORT);
+    while ((new_socket = accept(server_socket, (struct sockaddr *)&client, (socklen_t *)&c))) {
+        pthread_create(&thread, NULL, client_handler, (void *)&new_socket);
 
-    // Accept connections from clients and create a new thread for each
-    while (1) {
-        clientSocket = accept(serverSocket, (struct sockaddr *)&clientAddr, &addrSize);
-        if (clientSocket == -1) {
-            perror("Error accepting connection");
-            continue;
+        // Add new client to the array
+        pthread_mutex_lock(&mutex);
+        for (int i = 0; i < MAX_CLIENTS; i++) {
+            if (client_sockets[i] == 0) {
+                client_sockets[i] = new_socket;
+                break;
+            }
         }
-
-        // Create a new thread to handle the client
-        if (pthread_create(&thread, NULL, handleClient, (void *)&clientSocket) != 0) {
-            perror("Error creating thread");
-            close(clientSocket);
-            continue;
-        }
-
-        // Detach the thread to allow it to run independently
-        pthread_detach(thread);
+        pthread_mutex_unlock(&mutex);
     }
 
-    close(serverSocket);
+    if (new_socket < 0) {
+        perror("Accept failed");
+        exit(EXIT_FAILURE);
+    }
+
+    close(server_socket);
 
     return 0;
 }
-

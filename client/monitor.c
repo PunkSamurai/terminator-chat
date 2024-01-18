@@ -8,12 +8,12 @@
 #define MESSAGE_SIZE 200
 
 int main() {
-    int client_socket;
+    int monitor_socket;
     struct sockaddr_in server;
 
     // Create socket
-    client_socket = socket(AF_INET, SOCK_STREAM, 0);
-    if (client_socket == -1) {
+    monitor_socket = socket(AF_INET, SOCK_STREAM, 0);
+    if (monitor_socket == -1) {
         perror("Socket creation failed");
         exit(EXIT_FAILURE);
     }
@@ -24,25 +24,20 @@ int main() {
     server.sin_port = htons(8888);
 
     // Connect to the server
-    if (connect(client_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
+    if (connect(monitor_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
         perror("Connection failed");
         exit(EXIT_FAILURE);
     }
 
-    printf("Connected to the server on socket %d\n", client_socket);
+    printf("Connected to the server on socket %d\n", monitor_socket);
 
     char message[MESSAGE_SIZE];
 
-    while (1) {
-        printf("Enter message: ");
-        fgets(message, MESSAGE_SIZE, stdin);
-
-        // Send the message to the server
-        send(client_socket, message, strlen(message), 0);
+    while (recv(monitor_socket, message, MESSAGE_SIZE, 0) > 0) {
+        printf("Received message: %s", message);
     }
 
-    close(client_socket);
+    close(monitor_socket);
 
     return 0;
 }
-
