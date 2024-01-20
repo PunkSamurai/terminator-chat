@@ -7,7 +7,10 @@
 #include <pthread.h>
 
 #define MAX_CLIENTS 10
+#define USERNAME_SIZE 20
+#define TIMESTAMP_SIZE 10
 #define MESSAGE_SIZE 200
+#define FORMATTED_MESSAGE_SIZE (USERNAME_SIZE + TIMESTAMP_SIZE + MESSAGE_SIZE + 3)
 
 int client_sockets[MAX_CLIENTS];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
@@ -30,7 +33,7 @@ void *client_handler(void *socket_ptr) {
 
     printf("Client connected on socket %d\n", client_socket);
 
-    while (recv(client_socket, message, MESSAGE_SIZE, 0) > 0) {
+    while (recv(client_socket, message, FORMATTED_MESSAGE_SIZE, 0) > 0) {
         printf("Received message from socket %d: %s", client_socket, message);
         broadcast(message, client_socket);
     }

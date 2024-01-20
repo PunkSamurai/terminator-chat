@@ -5,7 +5,10 @@
 #include <arpa/inet.h>
 #include <unistd.h>
 
+#define USERNAME_SIZE 20
+#define TIMESTAMP_SIZE 10
 #define MESSAGE_SIZE 200
+#define FORMATTED_MESSAGE_SIZE (USERNAME_SIZE + TIMESTAMP_SIZE + MESSAGE_SIZE + 3)
 
 int main() {
     int monitor_socket;
@@ -31,10 +34,10 @@ int main() {
 
     printf("Connected to the server on socket %d\n", monitor_socket);
 
-    char message[MESSAGE_SIZE];
+    char message[FORMATTED_MESSAGE_SIZE];
 
-    while (recv(monitor_socket, message, MESSAGE_SIZE, 0) > 0) {
-        printf("Received message: %s", message);
+    while (recv(monitor_socket, message, FORMATTED_MESSAGE_SIZE, 0) > 0) {
+        printf("%s", message);
     }
 
     close(monitor_socket);
