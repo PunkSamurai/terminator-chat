@@ -70,7 +70,7 @@ int main() {
         char timestamp[TIMESTAMP_SIZE];
         getCurrentTimestamp(timestamp);
 
-        char formatted_message[FORMATTED_MESSAGE_SIZE];        
+        char* formatted_message = (char*) calloc(FORMATTED_MESSAGE_SIZE, sizeof(char));        
 
         if (strcmp(message, "/exit\n") == 0) {
             // Send the exit message to the server
@@ -85,6 +85,7 @@ int main() {
         formatMessage(message, username, timestamp, formatted_message);
         //formatted_message[strcspn(formatted_message, "\n")] = '\0';
         send(client_socket, formatted_message, strlen(formatted_message), 0);
+        memset(formatted_message, 0, FORMATTED_MESSAGE_SIZE);
     }
 
     close(client_socket);

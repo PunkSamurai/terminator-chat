@@ -29,13 +29,14 @@ void broadcast(char *message, int sender_socket) {
 
 void *client_handler(void *socket_ptr) {
     int client_socket = *(int *)socket_ptr;
-    char message[MESSAGE_SIZE];
+    char* message = (char*) calloc(FORMATTED_MESSAGE_SIZE, sizeof(char));
 
     printf("Client connected on socket %d\n", client_socket);
 
     while (recv(client_socket, message, FORMATTED_MESSAGE_SIZE, 0) > 0) {
         printf("Received message from socket %d: %s", client_socket, message);
         broadcast(message, client_socket);
+        memset(message, 0, FORMATTED_MESSAGE_SIZE);
     }
 
     // Client disconnected

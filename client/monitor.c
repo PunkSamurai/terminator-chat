@@ -38,6 +38,7 @@ int main() {
 
     while (recv(monitor_socket, message, FORMATTED_MESSAGE_SIZE, 0) > 0) {
         printf("%s", message);
+        memset(message, 0, FORMATTED_MESSAGE_SIZE);
     }
 
     close(monitor_socket);
