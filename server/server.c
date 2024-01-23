@@ -12,7 +12,7 @@
 #define MESSAGE_SIZE 200
 #define FORMATTED_MESSAGE_SIZE (USERNAME_SIZE + TIMESTAMP_SIZE + MESSAGE_SIZE + 3)
 
-#define SERVER_IP INADDR_ANY
+#define SERVER_IP "127.0.0.1"
 #define SERVER_PORT 8888
 
 int client_sockets[MAX_CLIENTS];
@@ -71,7 +71,7 @@ int main() {
 
     // Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = SERVER_IP;
+    server.sin_addr.s_addr = inet_addr(SERVER_IP);
     server.sin_port = htons(SERVER_PORT);
 
     // Bind
