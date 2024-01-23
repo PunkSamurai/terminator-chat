@@ -12,6 +12,9 @@
 #define MESSAGE_SIZE 200
 #define FORMATTED_MESSAGE_SIZE (USERNAME_SIZE + TIMESTAMP_SIZE + MESSAGE_SIZE + 3)
 
+#define SERVER_IP INADDR_ANY
+#define SERVER_PORT 8888
+
 int client_sockets[MAX_CLIENTS];
 pthread_mutex_t mutex = PTHREAD_MUTEX_INITIALIZER;
 
@@ -68,8 +71,8 @@ int main() {
 
     // Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = INADDR_ANY;
-    server.sin_port = htons(8888);
+    server.sin_addr.s_addr = SERVER_IP;
+    server.sin_port = htons(SERVER_PORT);
 
     // Bind
     if (bind(server_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {

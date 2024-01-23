@@ -10,6 +10,9 @@
 #define MESSAGE_SIZE 200
 #define FORMATTED_MESSAGE_SIZE (USERNAME_SIZE + TIMESTAMP_SIZE + MESSAGE_SIZE + 3)
 
+#define SERVER_IP "127.0.0.1"
+#define SERVER_PORT 8888
+
 int main() {
     int monitor_socket;
     struct sockaddr_in server;
@@ -23,8 +26,8 @@ int main() {
 
     // Prepare the sockaddr_in structure
     server.sin_family = AF_INET;
-    server.sin_addr.s_addr = inet_addr("127.0.0.1"); // Use the correct IP address of the server
-    server.sin_port = htons(8888);
+    server.sin_addr.s_addr = inet_addr(SERVER_IP); // Use the correct IP address of the server
+    server.sin_port = htons(SERVER_PORT);
 
     // Connect to the server
     if (connect(monitor_socket, (struct sockaddr *)&server, sizeof(server)) < 0) {
